@@ -22,11 +22,13 @@ export const profileService = {
       const userId = session.user.id;
       console.log("[PROFILE SERVICE] Fetching profile for user:", userId);
 
+      console.time("[PROFILE SERVICE] supabase query time");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
         .maybeSingle();
+      console.timeEnd("[PROFILE SERVICE] supabase query time");
 
       if (error) {
         console.error("[PROFILE SERVICE] Error fetching profile:", error);

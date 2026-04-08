@@ -26,7 +26,7 @@ export default function Document() {
         <Main />
         <NextScript />
 
-        {/* Visual Editor Script */}
+        {/* Visual Editor Script (Disabled to fix timeout issue)
         {process.env.NODE_ENV === "development" && (
           <script
             src="https://cdn.softgen.dev/visual-editor.min.js"
@@ -34,6 +34,7 @@ export default function Document() {
             data-softgen-visual-editor="true"
           />
         )}
+        */}
       </body>
     </Html>
   );

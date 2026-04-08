@@ -77,15 +77,24 @@ export const authService = {
   async signUp(
     email: string, 
     password: string,
-    metadata?: { full_name?: string; role?: string }
+    invitationToken: string,
+    metadata?: { full_name?: string }
   ): Promise<{ user: AuthUser | null; error: AuthError | null }> {
     try {
+      // 1. Validate invitation token first
+      const { data: invValid, error: invError } = await this.verifyInvitation(invitationToken, 'client'); // Default to client check or dynamic
+      if (invError || !invValid) {
+        return { user: null, error: { message: invError?.message || "Valid invitation token required." } };
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: metadata,
-          // CRITICAL: No emailRedirectTo to prevent external redirects
+          data: {
+            ...metadata,
+            invitation_token: invitationToken
+          },
         }
       });
 
@@ -299,24 +308,26 @@ export const authService = {
     }
   },
 
-  // Verify invitation token
+  // Verify invitation token using secure RPC
   async verifyInvitation(token: string, role: 'client' | 'partner'): Promise<{ data: any; error: AuthError | null }> {
     try {
-      const table = role === 'client' ? 'client_invitations' : 'partner_invitations';
-      const { data, error } = await (supabase as any)
-        .from(table)
-        .select('*')
-        .eq('token', token)
-        .eq('status', 'pending')
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('verify_invitation_token', {
+        p_token: token,
+        p_role: role
+      });
 
+      if (error) {
+        console.error('RPC Error:', error);
+        return { data: null, error: { message: "Invalid or expired invitation link." } };
+      }
 
-      if (error) throw error;
-      if (!data) return { data: null, error: { message: "Invitation not found or already used." } };
+      if (!data || !data.valid) {
+        return { data: null, error: { message: "This invitation link is invalid or has already been used." } };
+      }
 
       return { data, error: null };
-    } catch (error) {
-      return { data: null, error: { message: error.message } };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message || "An error occurred while verifying the invitation." } };
     }
   },
 

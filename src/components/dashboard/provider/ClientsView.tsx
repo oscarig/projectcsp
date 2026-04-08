@@ -7,6 +7,7 @@ import { ClientFilters } from "./clients/ClientFilters";
 import { ClientStats } from "./clients/ClientStats";
 import { BulkActionsCard } from "./clients/BulkActionsCard";
 import { mockClients } from "./clients/mockClients";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function ClientsView() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,23 +36,31 @@ export function ClientsView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-5 pb-10">
+      {/* Background Decor */}
+      <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] -z-10 opacity-40" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Clients</h1>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900">Clients</h1>
+          <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">Manage and monitor your client portfolio</p>
         </div>
         <Button 
           onClick={() => setIsAddClientOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700"
+          size="sm"
+          className="bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-200 transition-all active:scale-95"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 mr-1.5" />
           Add Client
         </Button>
         <AddClientDialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen} />
       </div>
 
-      {/* Search and Filter */}
+      {/* Stats */}
+      <ClientStats stats={stats} />
+
+      {/* Filters */}
       <ClientFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -59,18 +68,41 @@ export function ClientsView() {
         onFilterChange={setFilterStatus}
       />
 
-      {/* Stats */}
-      <ClientStats stats={stats} />
-
       {/* Client List */}
-      <div className="space-y-4">
-        {filteredClients.map((client) => (
-          <ClientCard key={client.id} client={client} />
-        ))}
+      <div className="space-y-3">
+        <AnimatePresence mode="popLayout">
+          {filteredClients.map((client, idx) => (
+            <motion.div
+              key={client.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ 
+                duration: 0.2, 
+                delay: Math.min(idx * 0.05, 0.3) 
+              }}
+              layout
+            >
+              <ClientCard client={client} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        
+        {filteredClients.length === 0 && (
+          <div className="py-20 text-center">
+            <p className="text-sm text-slate-400 font-medium">No clients found matching your filters.</p>
+          </div>
+        )}
       </div>
 
       {/* Bulk Actions */}
-      <BulkActionsCard />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        <BulkActionsCard />
+      </motion.div>
     </div>
   );
 }

@@ -47,6 +47,7 @@ export default function RegisterPage() {
           
           if (verifyError) {
             setError(verifyError.message);
+            setIsInviteVerified(false);
           } else if (data) {
             setEmail(data.client_email || data.partner_email || "");
             setFullName(data.client_name || data.partner_name || "");
@@ -54,12 +55,15 @@ export default function RegisterPage() {
           }
         } catch (err) {
           console.error("Verification error:", err);
+          setError("Failed to verify invitation. Please try again.");
         } finally {
           setLoading(false);
         }
       };
       
       verifyInvite();
+    } else {
+      setError("Registration is by invitation only. Please use the link provided in your invitation email.");
     }
   }, [router.isReady, router.query]);
 
@@ -124,11 +128,18 @@ export default function RegisterPage() {
         return;
       }
 
-      const { user, error: authError } = await authService.signUp(email, password, {
-        full_name: fullName,
-        role: assignedRole,
-        invitation_token: invitationToken as string | undefined,
-      });
+      if (!invitationToken || !isInviteVerified) {
+        setError("A valid invitation token is required to register.");
+        setLoading(false);
+        return;
+      }
+
+      const { user, error: authError } = await authService.signUp(
+        email, 
+        password, 
+        invitationToken,
+        { full_name: fullName }
+      );
 
 
       if (authError) {
@@ -342,7 +353,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !isInviteVerified}>
                 {loading ? "Creating account..." : "Create Account"}
               </Button>
             </CardContent>

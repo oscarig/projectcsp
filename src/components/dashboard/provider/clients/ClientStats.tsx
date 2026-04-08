@@ -1,4 +1,6 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Users, UserCheck, Clock, Archive } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ClientStatsProps {
   stats: {
@@ -10,37 +12,40 @@ interface ClientStatsProps {
 }
 
 export function ClientStats({ stats }: ClientStatsProps) {
+  const statItems = [
+    { label: "Total Clients", value: stats.total, icon: Users, color: "text-slate-600", bg: "bg-slate-50" },
+    { label: "Active Portal", value: stats.active, icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Pending Invite", value: stats.pending, icon: Clock, color: "text-orange-600", bg: "bg-orange-50" },
+    { label: "Archived", value: stats.archived, icon: Archive, color: "text-slate-400", bg: "bg-slate-50/50" },
+  ];
+
   return (
-    <Card className="border-none shadow-sm bg-gradient-to-r from-white to-slate-50/50">
-      <CardContent className="pt-6">
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1 text-nowrap">Total Clients</span>
-            <span className="text-2xl font-black text-slate-900 leading-none">{stats.total}</span>
-          </div>
-          
-          <div className="h-8 w-px bg-slate-100 hidden sm:block" />
-          
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest leading-none mb-1 text-nowrap">Active Portal</span>
-            <span className="text-2xl font-black text-emerald-600 leading-none">{stats.active}</span>
-          </div>
-
-          <div className="h-8 w-px bg-slate-100 hidden sm:block" />
-
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-orange-600/60 uppercase tracking-widest leading-none mb-1 text-nowrap">Pending Invite</span>
-            <span className="text-2xl font-black text-orange-600 leading-none">{stats.pending}</span>
-          </div>
-
-          <div className="h-8 w-px bg-slate-100 hidden sm:block" />
-
-          <div className="flex flex-col text-slate-400">
-            <span className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1 text-nowrap">Archived</span>
-            <span className="text-2xl font-black leading-none">{stats.archived}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {statItems.map((item, idx) => (
+        <motion.div
+          key={item.label}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: idx * 0.1 }}
+        >
+          <Card className="border-none shadow-sm overflow-hidden bg-white/50 backdrop-blur-sm hover:shadow-md transition-all duration-300">
+            <div className={`h-1 w-full ${item.bg.replace('bg-', 'bg-').split(' ')[0]}`} />
+            <div className="p-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                  {item.label}
+                </span>
+                <item.icon className={`h-3 w-3 ${item.color} opacity-60`} />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className={`text-xl font-black ${item.color.replace('600', '900')} leading-none`}>
+                  {item.value}
+                </span>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      ))}
+    </div>
   );
 }

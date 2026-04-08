@@ -3,14 +3,16 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Eye, Settings, FileText, Mail, UserPlus } from "lucide-react";
+import { MoreVertical, Eye, Settings, FileText, Mail, UserPlus, Briefcase, Calendar } from "lucide-react";
 import { InviteClientDialog } from "../InviteClientDialog";
+import { motion } from "framer-motion";
 
 interface Client {
   id: string;
@@ -33,108 +35,111 @@ interface ClientCardProps {
 export function ClientCard({ client }: ClientCardProps) {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
   return (
-    <Card className="hover:border-emerald-100 transition-colors">
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <Link
-                href={`/dashboard/provider/clients/${client.id}`}
-                className="text-lg font-semibold hover:text-emerald-600 transition-colors"
-              >
-                {client.name}
-              </Link>
-              <div className="text-sm text-muted-foreground">
-                Contact: {client.contact} · {client.email}
+    <motion.div
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2 }}
+    >
+      <Card className="hover:shadow-md transition-all duration-300 border-slate-200 overflow-hidden bg-white/80 backdrop-blur-sm group">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Main Info */}
+            <div className="flex items-center gap-4">
+              <Avatar className="h-10 w-10 border-2 border-slate-100 group-hover:border-emerald-200 transition-colors">
+                <AvatarFallback className="bg-emerald-50 text-emerald-700 font-bold text-xs">
+                  {getInitials(client.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-0.5">
+                <Link
+                  href={`/dashboard/provider/clients/${client.id}`}
+                  className="text-sm font-bold text-slate-900 hover:text-emerald-600 transition-colors block"
+                >
+                  {client.name}
+                </Link>
+                <div className="text-[11px] text-slate-500 font-medium flex items-center gap-2">
+                  <span>{client.contact}</span>
+                  <span className="text-slate-300">|</span>
+                  <span>{client.email}</span>
+                </div>
               </div>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Manage Client
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <FileText className="h-4 w-4 mr-2" />
-                  View Documents
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
 
-          {/* Stats */}
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div>
-              <span className="font-medium">Active Engagements:</span> {client.activeEngagements}
+            {/* Metrics & Status */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:justify-end">
+              <div className="flex items-center gap-4 text-[11px]">
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <Briefcase className="h-3.5 w-3.5 opacity-60" />
+                  <span className="font-bold text-slate-700">{client.activeEngagements}</span>
+                  <span className="text-[10px] uppercase tracking-tighter opacity-70">Active</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <Calendar className="h-3.5 w-3.5 opacity-60" />
+                  <span className="text-[10px] uppercase tracking-tighter opacity-70">Activity:</span>
+                  <span className="font-medium text-slate-700">{client.lastActivity}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {client.portalStatus === "active" ? (
+                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 text-[10px] py-0.5 font-bold uppercase tracking-wider">
+                    ● Active
+                  </Badge>
+                ) : (
+                  <Badge className="bg-orange-50 text-orange-700 border-orange-100 hover:bg-orange-100 text-[10px] py-0.5 font-bold uppercase tracking-wider">
+                    ⚠ Pending
+                  </Badge>
+                )}
+                
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>
+                    <Link href={`/dashboard/provider/clients/${client.id}`}>
+                      <Eye className="h-4 w-4 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                    </Link>
+                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreVertical className="h-4 w-4 text-slate-400" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                        <Eye className="h-3.5 w-3.5 mr-2" /> View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                        <Settings className="h-3.5 w-3.5 mr-2" /> Manage Client
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                        <FileText className="h-3.5 w-3.5 mr-2" /> View Documents
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-xs font-bold uppercase tracking-wider text-emerald-600"
+                        onClick={() => setIsInviteOpen(true)}
+                      >
+                        {client.portalStatus === "pending" ? (
+                          <><Mail className="h-3.5 w-3.5 mr-2" /> Resend Invite</>
+                        ) : (
+                          <><UserPlus className="h-3.5 w-3.5 mr-2" /> Invite Portal</>
+                        )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
             </div>
-            <div className="text-muted-foreground">·</div>
-            <div>
-              <span className="font-medium">Last Activity:</span> {client.lastActivity}
-            </div>
           </div>
-
-          {/* Portal Status */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium text-slate-500 uppercase tracking-wider text-[10px]">Portal Status:</span>
-            {client.portalStatus === "active" ? (
-              <>
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-100 font-bold text-[10px] uppercase tracking-wider">
-                  ● Active
-                </Badge>
-                <span className="text-muted-foreground">· Last login: {client.lastLogin}</span>
-              </>
-            ) : (
-              <>
-                <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-100 font-bold text-[10px] uppercase tracking-wider">
-                  ⚠ Invite Pending
-                </Badge>
-                <span className="text-muted-foreground">· Sent {client.inviteSent}</span>
-              </>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" asChild className="hover:border-emerald-200 hover:text-emerald-700">
-              <Link href={`/dashboard/provider/clients/${client.id}`}>
-                <Eye className="h-4 w-4 mr-2" />
-                View Engagements
-              </Link>
-            </Button>
-            {client.portalStatus === "pending" ? (
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="hover:border-emerald-200 hover:text-emerald-700"
-                onClick={() => setIsInviteOpen(true)}
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Resend Invite
-              </Button>
-            ) : (
-              <Button 
-                size="sm" 
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                onClick={() => setIsInviteOpen(true)}
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invite to Portal
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardContent>
+        </CardContent>
+      </Card>
 
       <InviteClientDialog 
         open={isInviteOpen} 
@@ -143,6 +148,6 @@ export function ClientCard({ client }: ClientCardProps) {
         email={client.email}
         showTrigger={false}
       />
-    </Card>
+    </motion.div>
   );
 }

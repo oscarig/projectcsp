@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Mail, CheckCircle2, UserPlus, Search, Check, Users } from "lucide-react";
@@ -176,7 +177,9 @@ export function BulkInviteDialog() {
           <div className="flex gap-2">
             {!sentCount ? (
               <>
-                <Button variant="ghost" onClick={() => handleOpenChange?.(false)} className="text-xs font-bold uppercase tracking-widest">Cancel</Button>
+                <DialogClose asChild>
+                  <Button variant="ghost" className="text-xs font-bold uppercase tracking-widest">Cancel</Button>
+                </DialogClose>
                 <Button 
                   onClick={handleSendInvites} 
                   disabled={selectedClients.length === 0 || isSending}

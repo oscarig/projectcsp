@@ -6,7 +6,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 export default function NotificationsPage() {
   return (
     <ProtectedRoute allowedRoles={["provider"]}>
-      <SEO title="Notifications | DigiLedg Provider Dashboard" />
+      <SEO />
       <ProviderLayout>
         <NotificationsView />
       </ProviderLayout>

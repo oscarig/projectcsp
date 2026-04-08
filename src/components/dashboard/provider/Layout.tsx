@@ -66,12 +66,12 @@ export function ProviderLayout({ children }: ProviderLayoutProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard/provider", icon: LayoutDashboard },
-    { name: "Notifications", href: "/dashboard/provider/notifications", icon: Bell, badge: 3 },
-    { name: "Engagements", href: "/dashboard/provider/engagements", icon: Briefcase },
     { name: "Clients", href: "/dashboard/provider/clients", icon: Users },
+    { name: "Engagements", href: "/dashboard/provider/engagements", icon: Briefcase },
     { name: "Partners", href: "/dashboard/provider/partners", icon: Handshake },
     { name: "Invitations", href: "/dashboard/provider/invitations", icon: Mail },
     { name: "Documents", href: "/dashboard/provider/documents", icon: FileText },
+    { name: "Notifications", href: "/dashboard/provider/notifications", icon: Bell, badge: 3 },
     { name: "Reports", href: "/dashboard/provider/reports", icon: BarChart3 },
     { name: "Billing", href: "/dashboard/provider/billing", icon: CreditCard },
     { name: "Team", href: "/dashboard/provider/team", icon: Users },

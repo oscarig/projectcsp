@@ -43,8 +43,8 @@ export function ClientsView() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900">Clients</h1>
-          <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">Manage and monitor your client portfolio</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Clients</h1>
+          <p className="text-slate-500 mt-1">Manage and monitor your client portfolio</p>
         </div>
         <Button 
           onClick={() => setIsAddClientOpen(true)}

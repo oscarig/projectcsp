@@ -35,6 +35,7 @@ import {
   Settings,
   HelpCircle,
   BookOpen,
+  ArrowUpCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NotificationCenter } from "./NotificationCenter";
@@ -74,6 +75,7 @@ export function PartnerLayout({ children }: PartnerLayoutProps) {
     { name: "Earnings", href: "/dashboard/partner/earnings", icon: DollarSign },
     { name: "Profile", href: "/dashboard/partner/profile", icon: User },
     { name: "Directory", href: "/dashboard/partner/directory", icon: Globe },
+    { name: "Mejorar a Provider", href: "/dashboard/partner/upgrade", icon: ArrowUpCircle },
   ];
 
   return (

@@ -41,6 +41,25 @@ export const documentService = {
     return (data as any) || [];
   },
 
+  // Get all documents for a specific client (direct relation)
+  async getDocumentsByClientId(clientId: string) {
+    const { data, error } = await supabase
+      .from("documents")
+      .select(`
+        *,
+        uploader:profiles!documents_uploaded_by_fkey(full_name, email)
+      `)
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching documents:", error);
+      throw error;
+    }
+
+    return (data as any) || [];
+  },
+
   // Upload a document
   async uploadDocument(file: File, documentData: any) {
     try {
@@ -50,14 +69,19 @@ export const documentService = {
       const folder = documentData.engagement_id || "general";
       const filePath = `documents/${folder}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log("Preparing to upload file to path:", filePath);
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("documents")
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        });
 
       if (uploadError) {
-        console.error("Error uploading file:", uploadError);
+        console.error("Error uploading file to storage:", uploadError);
         throw uploadError;
       }
+      console.log("File uploaded successfully to storage:", uploadData);
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -79,7 +103,7 @@ export const documentService = {
         .maybeSingle();
 
       if (error) {
-        console.error("Error creating document record:", error);
+        console.error("Error creating document record in database:", error);
         throw error;
       }
 

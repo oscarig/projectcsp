@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,22 +15,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Building2, User, Mail, Phone, Sparkles } from "lucide-react";
 
-interface AddClientDialogProps {
+interface EditClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  client: {
+    id: string;
+    name: string;
+    contact: string;
+    email: string;
+    phone: string;
+  };
 }
 
-export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDialogProps) {
+export function EditClientDialog({ open, onOpenChange, onSuccess, client }: EditClientDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    companyName: "",
-    contactName: "",
-    contactEmail: "",
-    contactPhone: "",
+    companyName: client?.name || "",
+    contactName: client?.contact || "",
+    contactEmail: client?.email || "",
+    contactPhone: client?.phone || "",
   });
+
+  // Effect to update formData when client prop changes
+  useEffect(() => {
+    if (client) {
+      setFormData({
+        companyName: client.name || "",
+        contactName: client.contact || "",
+        contactEmail: client.email || "",
+        contactPhone: client.phone || "",
+      });
+    }
+  }, [client, open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
@@ -57,18 +76,16 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
 
     setIsLoading(true);
     try {
-      await clientService.createClient({
+      await clientService.updateClient(client.id, {
         company_name: formData.companyName,
         contact_name: formData.contactName,
         contact_email: formData.contactEmail,
         contact_phone: formData.contactPhone,
-        provider_id: user.id,
-        status: "Enquiry",
       });
 
       toast({
         title: "Success",
-        description: "Client added successfully.",
+        description: "Client updated successfully.",
       });
       
       setFormData({
@@ -83,7 +100,7 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
       console.error(error);
       toast({
         title: "Error",
-        description: error.message || "Failed to add client.",
+        description: error.message || "Failed to update client.",
         variant: "destructive",
       });
     } finally {
@@ -98,9 +115,9 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
           <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
             <UserPlus className="h-6 w-6 text-emerald-600" />
           </div>
-          <DialogTitle>Add New Client</DialogTitle>
+          <DialogTitle>Edit Client</DialogTitle>
           <DialogDescription>
-            Enter the professional details to add a new client to your portfolio.
+            Update the information for {client.name}.
           </DialogDescription>
         </DialogHeader>
 
@@ -177,7 +194,7 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
             <div className="space-y-1">
               <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Quick Setup</p>
               <p className="text-[10px] text-emerald-700/70 leading-relaxed font-medium">
-                Clients added here can be immediately assigned to new engagements.
+                Keep client information up to date to ensure smooth communication.
               </p>
             </div>
           </div>
@@ -192,7 +209,7 @@ export function AddClientDialog({ open, onOpenChange, onSuccess }: AddClientDial
             disabled={isLoading}
             className="bg-emerald-600 hover:bg-emerald-700 font-bold uppercase tracking-widest text-xs min-w-[120px]"
           >
-            {isLoading ? "Adding..." : "Add Client"}
+            {isLoading ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

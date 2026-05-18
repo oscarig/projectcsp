@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClientCard } from "./clients/ClientCard";
@@ -6,33 +6,75 @@ import { AddClientDialog } from "./clients/AddClientDialog";
 import { ClientFilters } from "./clients/ClientFilters";
 import { ClientStats } from "./clients/ClientStats";
 import { BulkActionsCard } from "./clients/BulkActionsCard";
-import { mockClients } from "./clients/mockClients";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
+import { clientService } from "@/services/clientService";
 
 export function ClientsView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
 
-  const filteredClients = mockClients.filter((client) => {
+  const { user } = useAuth();
+  const [clients, setClients] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchClients = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      setIsLoading(true);
+      const dbClients = await clientService.getClientsByProvider(user.id);
+      
+      const formattedClients = dbClients.map((c: any) => ({
+        id: c.id,
+        name: c.company_name,
+        contact: c.contact_name,
+        email: c.contact_email,
+        phone: c.contact_phone || "",
+        activeEngagements: 0, 
+        lastActivity: "Just now", 
+        portalStatus: "pending", 
+        lastLogin: null,
+        clientSince: new Date(c.created_at).toLocaleDateString(),
+        status: c.status
+      }));
+      setClients(formattedClients);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
+
+  const handleClientDeleted = useCallback((clientId: string) => {
+    setClients(prev => prev.filter(c => c.id !== clientId));
+  }, []);
+
+  const handleClientStatusChanged = useCallback((clientId: string, newStatus: string) => {
+    setClients(prev => prev.map(c => c.id === clientId ? { ...c, status: newStatus } : c));
+  }, []);
+
+  const filteredClients = clients.filter((client) => {
     const matchesSearch =
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesFilter =
-      filterStatus === "all" ||
-      (filterStatus === "active" && client.portalStatus === "active") ||
-      (filterStatus === "pending" && client.portalStatus === "pending");
+      filterStatus === "all" || client.status === filterStatus;
 
     return matchesSearch && matchesFilter;
   });
 
   const stats = {
-    total: 47,
-    active: 32,
-    pending: 8,
-    archived: 7,
+    total: clients.length,
+    active: clients.filter(c => c.status === "Active").length,
+    pending: clients.filter(c => c.status === "Enquiry").length, // Treating Enquiry as pending for stats
+    archived: clients.filter(c => c.status === "Stracoff").length,
   };
 
   return (
@@ -54,7 +96,7 @@ export function ClientsView() {
           <Plus className="h-4 w-4 mr-1.5" />
           Add Client
         </Button>
-        <AddClientDialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen} />
+        <AddClientDialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen} onSuccess={fetchClients} />
       </div>
 
       {/* Stats */}
@@ -83,16 +125,24 @@ export function ClientsView() {
               }}
               layout
             >
-              <ClientCard client={client} />
+              <ClientCard 
+                client={client} 
+                onDeleted={() => handleClientDeleted(client.id)}
+                onStatusChange={(newStatus) => handleClientStatusChanged(client.id, newStatus)}
+              />
             </motion.div>
           ))}
         </AnimatePresence>
         
-        {filteredClients.length === 0 && (
+        {isLoading ? (
+          <div className="py-20 text-center">
+            <p className="text-sm text-slate-400 font-medium">Loading clients...</p>
+          </div>
+        ) : filteredClients.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-sm text-slate-400 font-medium">No clients found matching your filters.</p>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Bulk Actions */}

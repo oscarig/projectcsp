@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,12 @@ import {
   FileText,
 } from "lucide-react";
 
+import { EditClientDialog } from "./clients/EditClientDialog";
+import { clientService } from "@/services/clientService";
+import { documentService } from "@/services/documentService";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+
 interface ClientDetailViewProps {
   clientId?: string;
 }
@@ -23,16 +29,111 @@ interface ClientDetailViewProps {
 export function ClientDetailView({ clientId }: ClientDetailViewProps) {
   const [activeTab, setActiveTab] = useState("overview");
 
-  const client = {
-    id: "1",
-    name: "Tech Innovators Ltd",
-    contact: "John Smith",
-    email: "john@techinnovators.com",
-    phone: "+44 20 1234 5678",
-    clientSince: "15 Mar 2021",
-    portalUrl: "techinnovators.londoncsp.globalcspconnect.com",
-    portalStatus: "active",
-    lastLogin: "2 days ago",
+  const [client, setClient] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchClient = useCallback(async () => {
+    if (!clientId) return;
+    try {
+      setIsLoading(true);
+      const data = await clientService.getClientById(clientId);
+      if (data) {
+        setClient({
+          id: data.id,
+          name: data.company_name,
+          contact: data.contact_name,
+          email: data.contact_email,
+          phone: data.contact_phone || "",
+          clientSince: new Date(data.created_at).toLocaleDateString(),
+          portalUrl: "techinnovators.londoncsp.globalcspconnect.com",
+          portalStatus: data.status === "Active" ? "active" : "pending",
+          lastLogin: "2 days ago",
+          status: data.status,
+        });
+      }
+      
+      const docsData = await documentService.getDocumentsByClientId(clientId);
+      setDocuments(docsData);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clientId]);
+
+  useEffect(() => {
+    fetchClient();
+  }, [fetchClient]);
+
+  if (isLoading) {
+    return <div className="py-20 text-center text-slate-500">Loading client details...</div>;
+  }
+
+  if (!client) {
+    return <div className="py-20 text-center text-slate-500">Client not found.</div>;
+  }
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id || !client?.id) return;
+    
+    // Check file size (limit to 10MB to prevent hanging on slow connections)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Please select a file smaller than 10MB.", variant: "destructive" });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      console.log("Starting upload for file:", file.name, file.size, file.type);
+      
+      const documentData = {
+        client_id: client.id,
+        uploaded_by: user.id,
+        document_type: "client_file",
+        status: "pending"
+      };
+      
+      console.log("Calling documentService.uploadDocument...");
+      await documentService.uploadDocument(file, documentData);
+      
+      console.log("Upload finished. Refetching documents...");
+      toast({ title: "Success", description: "Document uploaded successfully." });
+      
+      const docsData = await documentService.getDocumentsByClientId(clientId);
+      setDocuments(docsData);
+      console.log("Documents refetched successfully.");
+    } catch (error: any) {
+      console.error("Upload error caught:", error);
+      toast({ 
+        title: "Failed to upload document", 
+        description: error.message || "An unexpected error occurred during upload.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const activeEngagements = [
@@ -61,34 +162,6 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
       nextAction: "Director verification in progress",
     },
   ];
-
-  const documents = [
-    {
-      id: "1",
-      name: "engagement_letter_sp042.pdf",
-      uploaded: "10 Apr 2024",
-      size: "245 KB",
-    },
-    {
-      id: "2",
-      name: "passport_john.pdf",
-      uploaded: "12 Apr 2024",
-      size: "1.2 MB",
-    },
-    {
-      id: "3",
-      name: "utility_bill.pdf",
-      uploaded: "12 Apr 2024",
-      size: "890 KB",
-    },
-    {
-      id: "4",
-      name: "proof_of_address.pdf",
-      uploaded: "15 Apr 2024",
-      size: "756 KB",
-    },
-  ];
-
   const history = {
     totalEngagements: 8,
     completed: 5,
@@ -121,13 +194,20 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
                 Client since: {client.clientSince}
               </div>
             </div>
-            <Button>
+            <Button onClick={() => setIsEditOpen(true)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
           </div>
         </CardContent>
       </Card>
+      
+      <EditClientDialog 
+        open={isEditOpen} 
+        onOpenChange={setIsEditOpen} 
+        onSuccess={fetchClient}
+        client={client}
+      />
 
       {/* Client Portal */}
       <Card>
@@ -142,8 +222,12 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
             </div>
             <div className="flex items-center gap-2 text-sm">
               <span className="font-medium">Status:</span>
-              <Badge variant="default" className="bg-green-500">
-                ● Active
+              <Badge variant="default" className={
+                client.status === "Active" ? "bg-emerald-500" :
+                client.status === "CDD" ? "bg-blue-500" :
+                client.status === "Stracoff" ? "bg-red-500" : "bg-orange-500"
+              }>
+                ● {client.status}
               </Badge>
               <span className="text-muted-foreground">
                 · Last login: {client.lastLogin}
@@ -263,33 +347,48 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Documents</CardTitle>
-            <Button>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload
-            </Button>
+            <div>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={handleFileUpload}
+              />
+              <Button onClick={handleUploadClick} disabled={isUploading}>
+                <Upload className="h-4 w-4 mr-2" />
+                {isUploading ? "Uploading..." : "Upload"}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {documents.map((doc) => (
-              <div
-                key={doc.id}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <div className="font-medium">{doc.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Uploaded {doc.uploaded} · {doc.size}
+            {documents.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">No documents uploaded yet.</p>
+            ) : (
+              documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium">{doc.file_name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Uploaded {new Date(doc.created_at).toLocaleDateString()} · {formatBytes(doc.file_size || 0)}
+                      </div>
                     </div>
                   </div>
+                  <Button variant="ghost" size="icon" asChild>
+                    <a href={doc.file_url} target="_blank" rel="noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon">
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

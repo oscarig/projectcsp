@@ -10,6 +10,7 @@ export interface Client {
   lastLogin: string | null;
   inviteSent?: string;
   clientSince: string;
+  status?: "Enquiry" | "CDD" | "Active" | "Stracoff";
 }
 
 export const mockClients: Client[] = [
@@ -24,6 +25,7 @@ export const mockClients: Client[] = [
     portalStatus: "active",
     lastLogin: "2 days ago",
     clientSince: "15 Mar 2021",
+    status: "Active",
   },
   {
     id: "2",
@@ -36,6 +38,7 @@ export const mockClients: Client[] = [
     portalStatus: "active",
     lastLogin: "5 days ago",
     clientSince: "22 Jun 2022",
+    status: "CDD",
   },
   {
     id: "3",
@@ -49,6 +52,7 @@ export const mockClients: Client[] = [
     lastLogin: null,
     inviteSent: "2 days ago",
     clientSince: "8 Jan 2024",
+    status: "Enquiry",
   },
   {
     id: "4",
@@ -61,5 +65,6 @@ export const mockClients: Client[] = [
     portalStatus: "active",
     lastLogin: "1 week ago",
     clientSince: "3 Nov 2023",
+    status: "Stracoff",
   },
 ];

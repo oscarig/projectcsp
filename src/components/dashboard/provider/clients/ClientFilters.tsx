@@ -17,8 +17,10 @@ export function ClientFilters({
 }: ClientFiltersProps) {
   const statuses = [
     { id: "all", label: "All" },
-    { id: "active", label: "Active" },
-    { id: "pending", label: "Pending" },
+    { id: "Enquiry", label: "Enquiry" },
+    { id: "CDD", label: "CDD" },
+    { id: "Active", label: "Active" },
+    { id: "Stracoff", label: "Stracoff" },
   ];
 
   return (

@@ -65,7 +65,10 @@ export function ClientsView() {
       client.email.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesFilter =
-      filterStatus === "all" || client.status === filterStatus;
+      (filterStatus === "all" && !["Struck-off", "Rejected", "Resigned"].includes(client.status)) ||
+      (filterStatus === "Archived"
+        ? ["Struck-off", "Rejected", "Resigned"].includes(client.status)
+        : client.status === filterStatus);
 
     return matchesSearch && matchesFilter;
   });
@@ -74,7 +77,7 @@ export function ClientsView() {
     total: clients.length,
     active: clients.filter(c => c.status === "Active").length,
     pending: clients.filter(c => c.status === "Enquiry").length, // Treating Enquiry as pending for stats
-    archived: clients.filter(c => c.status === "Stracoff").length,
+    archived: clients.filter(c => ["Struck-off", "Rejected", "Resigned"].includes(c.status)).length,
   };
 
   return (
@@ -100,7 +103,7 @@ export function ClientsView() {
       </div>
 
       {/* Stats */}
-      <ClientStats stats={stats} />
+      <ClientStats stats={stats} activeFilter={filterStatus} onFilterChange={setFilterStatus} />
 
       {/* Filters */}
       <ClientFilters

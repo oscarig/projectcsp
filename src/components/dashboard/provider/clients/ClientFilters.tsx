@@ -20,7 +20,7 @@ export function ClientFilters({
     { id: "Enquiry", label: "Enquiry" },
     { id: "CDD", label: "CDD" },
     { id: "Active", label: "Active" },
-    { id: "Stracoff", label: "Stracoff" },
+    { id: "Archived", label: "Archived" },
   ];
 
   return (

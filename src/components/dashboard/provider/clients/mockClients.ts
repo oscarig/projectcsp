@@ -10,7 +10,7 @@ export interface Client {
   lastLogin: string | null;
   inviteSent?: string;
   clientSince: string;
-  status?: "Enquiry" | "CDD" | "Active" | "Stracoff";
+  status?: "Enquiry" | "CDD" | "Active" | "Struck-off" | "Rejected" | "Resigned";
 }
 
 export const mockClients: Client[] = [
@@ -65,6 +65,6 @@ export const mockClients: Client[] = [
     portalStatus: "active",
     lastLogin: "1 week ago",
     clientSince: "3 Nov 2023",
-    status: "Stracoff",
+    status: "Struck-off",
   },
 ];

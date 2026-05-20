@@ -117,12 +117,18 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
       console.log("Calling documentService.uploadDocument...");
       await documentService.uploadDocument(file, documentData);
       
-      console.log("Upload finished. Refetching documents...");
-      toast({ title: "Success", description: "Document uploaded successfully." });
+      console.log("Updating client status to CDD...");
+      try {
+        await clientService.updateClient(client.id, { status: "CDD" });
+      } catch (err) {
+        console.error("Failed to update client status to CDD on upload:", err);
+      }
       
-      const docsData = await documentService.getDocumentsByClientId(clientId);
-      setDocuments(docsData);
-      console.log("Documents refetched successfully.");
+      console.log("Upload finished. Refetching client and documents...");
+      toast({ title: "Success", description: "Document uploaded successfully. Client status updated to CDD." });
+      
+      await fetchClient();
+      console.log("Client and documents refetched successfully.");
     } catch (error: any) {
       console.error("Upload error caught:", error);
       toast({ 
@@ -225,7 +231,9 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
               <Badge variant="default" className={
                 client.status === "Active" ? "bg-emerald-500" :
                 client.status === "CDD" ? "bg-blue-500" :
-                client.status === "Stracoff" ? "bg-red-500" : "bg-orange-500"
+                client.status === "Struck-off" ? "bg-red-500" :
+                client.status === "Rejected" ? "bg-rose-500" :
+                client.status === "Resigned" ? "bg-slate-500" : "bg-orange-500"
               }>
                 ● {client.status}
               </Badge>

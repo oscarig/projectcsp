@@ -38,7 +38,7 @@ interface Client {
   lastLogin: string | null;
   inviteSent?: string;
   clientSince: string;
-  status?: "Enquiry" | "CDD" | "Active" | "Stracoff";
+  status?: "Enquiry" | "CDD" | "Active" | "Struck-off" | "Rejected" | "Resigned";
 }
 
 interface ClientCardProps {
@@ -154,40 +154,37 @@ export function ClientCard({ client, onDeleted, onStatusChange }: ClientCardProp
               </div>
 
               <div className="flex items-center gap-3">
-                {status === "Active" ? (
-                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 text-[10px] py-0.5 font-bold uppercase tracking-wider cursor-default">
-                    ● {status}
-                  </Badge>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="focus:outline-none">
-                      <Badge className={
-                        (status === "CDD" ? "bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100 " :
-                        status === "Stracoff" ? "bg-red-50 text-red-700 border-red-100 hover:bg-red-100 " :
-                        "bg-orange-50 text-orange-700 border-orange-100 hover:bg-orange-100 ")
-                        + "text-[10px] py-0.5 font-bold uppercase tracking-wider cursor-pointer"
-                      }>
-                        ● {status}
-                      </Badge>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {["Enquiry", "CDD", "Active", "Stracoff"].map((s) => (
-                        <DropdownMenuItem 
-                          key={s} 
-                          onClick={() => {
-                            if (s !== status) {
-                              setPendingStatus(s);
-                              setIsAlertOpen(true);
-                            }
-                          }}
-                          className="text-xs font-bold uppercase tracking-wider text-slate-600"
-                        >
-                          {s}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="focus:outline-none">
+                    <Badge className={
+                      (status === "Active" ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 " :
+                      status === "CDD" ? "bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100 " :
+                      status === "Struck-off" ? "bg-red-50 text-red-700 border-red-100 hover:bg-red-100 " :
+                      status === "Rejected" ? "bg-rose-50 text-rose-700 border-rose-100 hover:bg-rose-100 " :
+                      status === "Resigned" ? "bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100 " :
+                      "bg-orange-50 text-orange-700 border-orange-100 hover:bg-orange-100 ")
+                      + "text-[10px] py-0.5 font-bold uppercase tracking-wider cursor-pointer"
+                    }>
+                      ● {status}
+                    </Badge>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {["Enquiry", "CDD", "Active", "Struck-off", "Rejected", "Resigned"].map((s) => (
+                      <DropdownMenuItem 
+                        key={s} 
+                        onClick={() => {
+                          if (s !== status) {
+                            setPendingStatus(s);
+                            setIsAlertOpen(true);
+                          }
+                        }}
+                        className="text-xs font-bold uppercase tracking-wider text-slate-600"
+                      >
+                        {s}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 
                 <div className="flex items-center gap-1">
                   <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>

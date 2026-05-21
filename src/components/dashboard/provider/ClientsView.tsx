@@ -64,10 +64,12 @@ export function ClientsView() {
       client.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase());
 
+    const isArchivedStatus = ["struck-off", "rejected", "resigned"].includes(client.status?.toLowerCase());
+
     const matchesFilter =
-      (filterStatus === "all" && !["Struck-off", "Rejected", "Resigned"].includes(client.status)) ||
+      (filterStatus === "all" && !isArchivedStatus) ||
       (filterStatus === "Archived"
-        ? ["Struck-off", "Rejected", "Resigned"].includes(client.status)
+        ? isArchivedStatus
         : client.status === filterStatus);
 
     return matchesSearch && matchesFilter;
@@ -77,7 +79,7 @@ export function ClientsView() {
     total: clients.length,
     active: clients.filter(c => c.status === "Active").length,
     pending: clients.filter(c => c.status === "Enquiry").length, // Treating Enquiry as pending for stats
-    archived: clients.filter(c => ["Struck-off", "Rejected", "Resigned"].includes(c.status)).length,
+    archived: clients.filter(c => ["struck-off", "rejected", "resigned"].includes(c.status?.toLowerCase())).length,
   };
 
   return (

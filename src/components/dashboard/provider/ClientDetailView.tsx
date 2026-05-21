@@ -11,12 +11,18 @@ import {
   Upload,
   ExternalLink,
   Bell,
-  Ban,
   Plus,
   FileText,
+  Trash2,
+  ShieldAlert,
+  AlertTriangle,
+  ShieldCheck,
+  Shield,
+  Ban,
 } from "lucide-react";
 
 import { EditClientDialog } from "./clients/EditClientDialog";
+import { RiskAssessmentDialog } from "./clients/RiskAssessmentDialog";
 import { clientService } from "@/services/clientService";
 import { documentService } from "@/services/documentService";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +40,9 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  
+  const [riskLevel, setRiskLevel] = useState<"Low" | "Medium" | "High">("Low");
+  const [isRiskAssessmentOpen, setIsRiskAssessmentOpen] = useState(false);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -142,6 +151,23 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
     }
   };
 
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm("Are you sure you want to delete this document?")) return;
+    
+    try {
+      await documentService.deleteDocument(documentId);
+      toast({ title: "Success", description: "Document deleted successfully." });
+      setDocuments(prev => prev.filter(doc => doc.id !== documentId));
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast({ 
+        title: "Failed to delete document", 
+        description: error.message || "An unexpected error occurred.", 
+        variant: "destructive" 
+      });
+    }
+  };
+
   const activeEngagements = [
     {
       id: "SP-2024-042",
@@ -199,6 +225,18 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
               <div className="text-sm text-muted-foreground">
                 Client since: {client.clientSince}
               </div>
+              <div className="flex items-center gap-2 pt-1 text-sm">
+                <span className="font-medium text-slate-700">Status:</span>
+                <Badge variant="default" className={
+                  client.status === "Active" ? "bg-emerald-500" :
+                  client.status === "CDD" ? "bg-blue-500" :
+                  client.status === "Struck-off" ? "bg-red-500" :
+                  client.status === "Rejected" ? "bg-rose-500" :
+                  client.status === "Resigned" ? "bg-slate-500" : "bg-orange-500"
+                }>
+                  ● {client.status}
+                </Badge>
+              </div>
             </div>
             <Button onClick={() => setIsEditOpen(true)}>
               <Edit className="h-4 w-4 mr-2" />
@@ -215,6 +253,91 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
         client={client}
       />
 
+      {/* Risk Assessment */}
+      <Card className={`border-l-4 overflow-hidden shadow-md transition-all duration-500 relative
+        ${riskLevel === "Low" ? "border-l-emerald-500 bg-emerald-50/40" : 
+          riskLevel === "Medium" ? "border-l-amber-500 bg-amber-50/40" : 
+          "border-l-red-500 bg-red-50/40 ring-1 ring-red-500/20"}`
+      }>
+        {/* Background Watermark Icon */}
+        <div className={`absolute -right-4 -top-4 opacity-5 pointer-events-none transform -rotate-12
+          ${riskLevel === "Low" ? "text-emerald-900" : 
+            riskLevel === "Medium" ? "text-amber-900" : 
+            "text-red-900"}`
+        }>
+          {riskLevel === "Low" ? <ShieldCheck size={180} /> :
+           riskLevel === "Medium" ? <AlertTriangle size={180} /> :
+           <ShieldAlert size={180} />}
+        </div>
+        
+        <CardHeader className="pb-4 border-b border-black/5 bg-white/40 backdrop-blur-sm relative z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className={`h-5 w-5 ${
+                riskLevel === "Low" ? "text-emerald-600" : 
+                riskLevel === "Medium" ? "text-amber-600" : 
+                "text-red-600"
+              }`} />
+              <CardTitle className="text-xl">Risk Assessment</CardTitle>
+            </div>
+            <Button 
+              size="sm" 
+              onClick={() => setIsRiskAssessmentOpen(true)}
+              className={`font-bold shadow-sm transition-transform active:scale-95 ${
+                riskLevel === "High" ? "bg-red-600 hover:bg-red-700 text-white shadow-red-200" :
+                "bg-slate-900 hover:bg-slate-800 text-white"
+              }`}
+            >
+              <Edit className="h-3.5 w-3.5 mr-2" />
+              Update Risk Profile
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className={`p-4 rounded-full shadow-sm ${
+                riskLevel === "Low" ? "bg-emerald-100" : 
+                riskLevel === "Medium" ? "bg-amber-100" : 
+                "bg-red-100"
+              }`}>
+                {riskLevel === "Low" ? <ShieldCheck className="h-8 w-8 text-emerald-600" /> :
+                 riskLevel === "Medium" ? <AlertTriangle className="h-8 w-8 text-amber-600" /> :
+                 <ShieldAlert className="h-8 w-8 text-red-600" />}
+              </div>
+              <div className="space-y-1.5">
+                <span className="font-bold text-slate-600 uppercase tracking-wider text-xs block">Current Risk Level</span>
+                <Badge className={`text-sm px-4 py-1.5 font-black uppercase tracking-widest ${
+                  riskLevel === "Low" ? "bg-emerald-500 hover:bg-emerald-600 text-white border-none shadow-md shadow-emerald-200/50" :
+                  riskLevel === "Medium" ? "bg-amber-500 hover:bg-amber-600 text-white border-none shadow-md shadow-amber-200/50" :
+                  "bg-red-600 hover:bg-red-700 text-white border-none shadow-md shadow-red-300/50"
+                }`}>
+                  {riskLevel === "Low" ? "● Low" : 
+                   riskLevel === "Medium" ? "● Medium" : 
+                   "● High"}
+                </Badge>
+              </div>
+            </div>
+            
+            <div className={`text-sm font-medium p-4 rounded-xl border max-w-md ${
+                riskLevel === "Low" ? "bg-white/60 border-emerald-100 text-slate-600" : 
+                riskLevel === "Medium" ? "bg-amber-50/80 border-amber-200 text-amber-900" : 
+                "bg-red-50/80 border-red-200 text-red-900"
+            }`}>
+              {riskLevel === "Low" ? "The client profile is clear. Regular monitoring schedule applies without additional flags." : 
+               riskLevel === "Medium" ? "Enhanced Due Diligence (EDD) may be recommended. Monitor significant transactions closely." : 
+               "CRITICAL: Immediate Enhanced Due Diligence required. This account is flagged for senior management review."}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <RiskAssessmentDialog 
+        open={isRiskAssessmentOpen} 
+        onOpenChange={setIsRiskAssessmentOpen} 
+        onSave={setRiskLevel}
+      />
+
       {/* Client Portal */}
       <Card>
         <CardHeader>
@@ -226,20 +349,9 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
               <span className="font-medium">Portal URL:</span>{" "}
               <span className="text-muted-foreground">{client.portalUrl}</span>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-medium">Status:</span>
-              <Badge variant="default" className={
-                client.status === "Active" ? "bg-emerald-500" :
-                client.status === "CDD" ? "bg-blue-500" :
-                client.status === "Struck-off" ? "bg-red-500" :
-                client.status === "Rejected" ? "bg-rose-500" :
-                client.status === "Resigned" ? "bg-slate-500" : "bg-orange-500"
-              }>
-                ● {client.status}
-              </Badge>
-              <span className="text-muted-foreground">
-                · Last login: {client.lastLogin}
-              </span>
+            <div className="text-sm">
+              <span className="font-medium">Last login:</span>{" "}
+              <span className="text-muted-foreground">{client.lastLogin}</span>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -389,11 +501,16 @@ export function ClientDetailView({ clientId }: ClientDetailViewProps) {
                       </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" asChild>
-                    <a href={doc.file_url} target="_blank" rel="noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" asChild>
+                      <a href={doc.file_url} target="_blank" rel="noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteDocument(doc.id)} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))
             )}
